@@ -16,23 +16,45 @@ function onSearch(e) {
    const form = e.currentTarget;
    const searchQuery = form.elements.searchQuery.value;
    
-   fetchImage(searchQuery).then(renderGalleryCard).catch(onFetchError);
+   findImages(searchQuery).then(renderGalleryCard).catch(onFetchError);
 }
 
-function fetchImage(searchQuery) {
-   const url = `https://pixabay.com/api/?key=31422890-5e40c603f0e6080de62657891&q=${searchQuery}&image_type=photo&orientation=horizontal&safesearch=true`;
+function findImages(searchQuery) {
+   const BASE_URL = 'https://pixabay.com/api/';
+   const API_KEY = '31422890-5e40c603f0e6080de62657891';
+   const params = new URLSearchParams({
+      'q': searchQuery,
+      'image_type': 'photo',
+      'orientation': 'horizontal',
+      'safesearch': 'true',
+      'per_page': 40,
+      'page': 1
+   });
+   
+   const url = `${BASE_URL}?key=${API_KEY}&${params}`;
 
-   return fetch(url).then(res => res.json());
+   return fetch(url).then(response =>{
+      if (response.ok) {
+         return response.json();
+       } else {
+          throw new Error(response.status);
+       }
+   });
 }
 
 function renderGalleryCard(value) {
-   console.log(value.hits);
+   // console.log(value);
+   if (value.hits.length === 0) {
+      return Notify.info('Sorry, there are no images matching your search query. Please try again.');
+   }
+   
+   Notify.success(`Hooray! We found ${value.totalHits} images.`)
    const markup = galleryCard(value.hits);
    galleryContainerRef.innerHTML = markup;
 }
 
-function onFetchError() {
-   Notify.failure("Sorry, there are no images matching your search query. Please try again.");
+function onFetchError(error) {
+   Notify.failure(error);
 }
 
 let lightbox = new SimpleLightbox('.gallery a');
