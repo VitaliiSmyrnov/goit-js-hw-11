@@ -59,6 +59,7 @@ form {
    margin: 15px;
    width: calc(100% - 30px);
    height: auto;
+   border: 1px solid var(--item-border-color);
  
    transition: box-shadow var(--time) var(--timing-function);
 
@@ -96,9 +97,6 @@ form {
    text-align: center;
   
    font-size: 12px;
-   border-left: 1px solid var(--item-border-color);
-   border-right: 1px solid var(--item-border-color);
-   border-bottom: 1px solid var(--item-border-color);
 }
 
 .load-more {
