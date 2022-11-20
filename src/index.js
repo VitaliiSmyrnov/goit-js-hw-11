@@ -4,70 +4,57 @@ import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 import galleryCard from './templates/galleryCard.hbs';
 import { ImagesAPI } from './js/getImages.js';
+import { smoothScroll } from './js/smoothScroll.js';
+
 
 const searchFormRef = document.querySelector('#search-form');
 const galleryContainerRef = document.querySelector('.gallery');
 const btnLoad = document.querySelector('.load-more');
 
-searchFormRef.addEventListener('submit', onSearch);
+let lightbox;
 
-function onSearch(e) {
-  e.preventDefault();
-
-  const form = e.currentTarget;
-  const searchQuery = form.elements.searchQuery.value;
-
+function onSearchButtonClick(e) {
+   e.preventDefault();
+   const form = e.currentTarget;
+  const searchQuery = form.elements.searchQuery.value.trim();
+  
   ImagesAPI.findImages(searchQuery)
-    .then(data => {
-      Notify.success(`Hooray! We found ${data.totalHits} images.`);
-      galleryContainerRef.innerHTML = '';
-      renderGalleryCard(data);
+  .then(data => {
+     if (data.hits.length === 0) {
+      return Notify.failure('Sorry, there are no images matching your search query. Please try again.');
+   }
+     Notify.success(`Hooray! We found ${data.totalHits} images.`);
+     
+     galleryContainerRef.innerHTML = '';
+     renderGalleryCard(data);
+     lightbox = new SimpleLightbox('.gallery a');
+     
+     ImagesAPI.totalPages = data.totalHits / data.hits.length;
+     if (ImagesAPI.totalPages > 1) btnLoad.classList.remove('visually-hidden');  
     })
     .catch(onSearchError);
 }
 
 function renderGalleryCard(value) {
-  // console.log(value);
-  if (value.hits.length === 0) {
-    return Notify.failure(
-      'Sorry, there are no images matching your search query. Please try again.'
-    );
-  }
-
-  const markup = galleryCard(value.hits);
-  galleryContainerRef.insertAdjacentHTML('beforeend', markup);
-  btnLoad.classList.remove('visually-hidden');
+   const markup = galleryCard(value.hits);
+   galleryContainerRef.insertAdjacentHTML('beforeend', markup);
 }
 
 function onSearchError(error) {
-  Notify.failure(error);
+   Notify.failure(error);
 }
 
-btnLoad.addEventListener('click', () => {
-  ImagesAPI.findImages().then(renderGalleryCard).catch(onSearchError);
-});
+function onLoadMoreButtonClick() {
+   ImagesAPI.findImages().then(data => {
+      if (ImagesAPI.totalPages < ImagesAPI.currentPage) {
+         Notify.info("We're sorry, but you've reached the end of search results.");
+         btnLoad.classList.add('visually-hidden');
+      }
+      renderGalleryCard(data);
+      lightbox.refresh();
+      smoothScroll();
+   }).catch(onSearchError);
+}
 
-let lightbox = new SimpleLightbox('.gallery a');
-
-   // function findImages(searchQuery) {
-   //    const BASE_URL = 'https://pixabay.com/api/';
-   //    const API_KEY = '31422890-5e40c603f0e6080de62657891';
-   //    const params = new URLSearchParams({
-   //       'q': searchQuery,
-   //       'image_type': 'photo',
-   //       'orientation': 'horizontal',
-   //       'safesearch': 'true',
-   //       'per_page': 40,
-   //       'page': 1
-   //    });
-   
-   //    const url = `${BASE_URL}?key=${API_KEY}&${params}`;
-   
-   //    return fetch(url).then(response =>{
-   //       if (response.ok) {
-   //          return response.json();
-   //        } else {
-   //           throw new Error(response.status);
-   //        }
-   //    });
-   // }
+searchFormRef.addEventListener('submit', onSearchButtonClick);
+btnLoad.addEventListener('click', onLoadMoreButtonClick);

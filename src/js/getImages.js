@@ -2,6 +2,7 @@ const BASE_URL = 'https://pixabay.com/api/';
 const API_KEY = '31422890-5e40c603f0e6080de62657891';
 
 export class ImagesAPI {
+   static totalPages = 1;
    static currentPage = 1;
    static query = '';
 
